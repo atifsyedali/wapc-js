@@ -11,7 +11,7 @@ const __projectroot = findRoot(__dirname);
   await page.goto(server.url('/test/browser/index.html'));
   await page.waitForSelector('#done');
   const [successes, failures]: string[][] = await page.evaluate(() => {
-    const win = (window as unknown) as { successes: string[]; failures: string[] };
+    const win = window as unknown as { successes: string[]; failures: string[] };
     return [win.successes, win.failures];
   });
   console.log(`${successes.length} successes`);

@@ -12,6 +12,13 @@ interface Invocation {
   msg: Uint8Array;
 }
 
+interface WasiImports {
+  wasi: WebAssembly.ModuleImports;
+  wasi_unstable: WebAssembly.ModuleImports;
+  wasi_snapshot_preview1: WebAssembly.ModuleImports;
+  [key: string]: WebAssembly.ModuleImports;
+}
+
 const START = '_start'; // Linux/TinyGo initialization
 const WAPC_INIT = 'wapc_init';
 const GUEST_CALL = '__guest_call';
@@ -42,9 +49,16 @@ export class WapcHost {
   guestCall: CallableFunction;
   textEncoder: TextEncoder;
   textDecoder: TextDecoder;
+  wasiImports: WasiImports;
 
-  constructor(hostCall?: HostCall, writer?: Writer) {
+  constructor(hostCall?: HostCall, writer?: Writer, wasiImports?: WasiImports) {
     this.state = new ModuleState(hostCall, writer);
+    const generatedWasiImports = generateWASIImports(this);
+    this.wasiImports = wasiImports ?? {
+      wasi: generatedWasiImports,
+      wasi_unstable: generatedWasiImports,
+      wasi_snapshot_preview1: generatedWasiImports,
+    };
     this.textEncoder = new TextEncoder();
     this.textDecoder = new TextDecoder('utf-8');
     this.guestCall = () => undefined;
@@ -78,12 +92,9 @@ export class WapcHost {
   }
 
   getImports(): WebAssembly.Imports {
-    const wasiImports = generateWASIImports(this);
     return {
       wapc: generateWapcImports(this),
-      wasi: wasiImports,
-      wasi_unstable: wasiImports,
-      wasi_snapshot_preview1: wasiImports,
+      ...this.wasiImports,
     };
   }
 
@@ -134,7 +145,8 @@ export async function instantiateStreaming(
   source: Response | Promise<Response>,
   hostCall?: HostCall,
   writer?: Writer,
+  wasiImports?: WasiImports,
 ): Promise<WapcHost> {
-  const host = new WapcHost(hostCall, writer);
+  const host = new WapcHost(hostCall, writer, wasiImports);
   return host.instantiateStreaming(await source);
 }
