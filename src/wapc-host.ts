@@ -147,8 +147,13 @@ export class WapcHost {
   }
 }
 
-export async function instantiate(source: Uint8Array, hostCall?: HostCall, writer?: Writer): Promise<WapcHost> {
-  const host = new WapcHost(hostCall, writer);
+export async function instantiate(source: Uint8Array, 
+  hostCall?: HostCall, 
+  writer?: Writer,
+  wasiImports?: WasiImports,
+  initializeCallback?: InitializeCallback,
+  ): Promise<WapcHost> {
+  const host = new WapcHost(hostCall, writer, wasiImports, initializeCallback);
   return host.instantiate(source);
 }
 
